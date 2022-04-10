@@ -1,0 +1,129 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import sys, json, smtplib, email
+from PyQt5.QtWidgets import QComboBox, QApplication, QMessageBox, QWidget, QLabel, QTextEdit, QLineEdit, QPushButton, QVBoxLayout, QHBoxLayout
+from PyQt5 import QtCore
+
+
+#https://doc.qt.io/qtforpython-5/PySide2/QtWidgets/QWidget.html#PySide2.QtWidgets.PySide2.QtWidgets.QWidget.maximumWidth
+
+
+class MailMessage:
+    def __init__( self ):
+        self.myMailMessage = MIMEMultipart()
+
+    def setRecipient( self, tmpRecipient ):
+        self.myMailMessage['To'] = tmpRecipient
+
+    def setSender( self, tmpSender ):
+        self.myMailMessage['From'] = tmpSender
+
+    def setCC( self, tmpCarbonCopy ):
+        self.myMailMessage['cc'] = tmpCarbonCopy
+
+    def setSubject( self, tmpSubject ):
+        self.myMailMessage['Subject'] = tmpSubject
+
+    def setMessage( self, tmpMessage ):
+        self.myMailMessage.set_content( tmpMessage )
+
+    def addAttachment( self, tmpAttachment ):
+        self.myMailMessage.add_header( 'Content-Disposition', 'attachment',filename=( 'iso-8859-1', '', tmpAttachment ) )
+
+    def sendMailWithAccount( self, tmpAccountData ):
+        print("Sending...\n"+self.myMailMessage.as_string())
+
+
+class MessageWindow( QWidget ):
+    def __init__( self, tmpRecipients ): #Class constructor
+        super().__init__()
+#Read configuration file
+        with open('mailto.json', 'r') as tmpConfigFile:
+            tmpConfigStore = json.load(tmpConfigFile)
+#Store config within class
+        self.myConfiguration = tmpConfigStore
+#Create UI
+        self.initUI()
+#Initialize string to hold one or multiple recipients
+        tmpRecipientsString = ""
+#Delete first argument (the script name)
+        del tmpRecipients[0]
+#Initialize new mail Message
+        self.mailMessage = MailMessage()
+        for tmpTo in tmpRecipients:
+            tmpRecipientsString += tmpTo+","
+            self.mailMessage.setRecipient( tmpTo )
+        tmpRecipientsString = tmpRecipientsString.strip(",")
+        self.setWindowTitle( 'mailto: '+tmpRecipientsString )
+
+    def initUI( self ): #UI Creation
+        self.setGeometry( 0, 0, 600, 600 )
+#Create Layouts
+        self.myHorizontalLayout = QHBoxLayout()
+        self.myVerticalLayout = QVBoxLayout()
+#Create labels
+        self.mySourceAccountLabel = QLabel("Account:", alignment=QtCore.Qt.AlignLeft)
+        self.myCarboncopyLabel = QLabel("CC:", alignment=QtCore.Qt.AlignLeft)
+        self.mySubjectLabel = QLabel("Subject:", alignment=QtCore.Qt.AlignLeft)
+        self.myAttachmentLabel = QLabel( "Attachments: none", alignment=QtCore.Qt.AlignCenter )
+#Create Dropdown
+        self.mySourceAccountBox = QComboBox()
+        for tmpAccount in self.myConfiguration["SMTPaccounts"]:
+            self.mySourceAccountBox.addItem( tmpAccount["NAME"]+" <"+tmpAccount["SENDER"]+">" )
+#Create Input Fields
+        self.myCarboncopyLine = QLineEdit()
+        self.mySubjectLine = QLineEdit()
+#Create Message Field
+        self.myTextInputField = QTextEdit()
+#Create Buttons and add them to they corresponding layout
+        self.mySendButton = QPushButton("Send")
+        self.mySendButton.clicked.connect( self.sendButtonClicked )
+        self.mySendButton.setStyleSheet("background-color: #007fff; color: white; font-weight: bold;")
+        self.myCancelButton = QPushButton("Cancel")
+        self.myCancelButton.clicked.connect( self.cancelButtonClicked )
+        self.myCancelButton.setStyleSheet("background-color: #e30022; color: white; ")
+        self.myAttachFileButton = QPushButton("Attach")
+        self.myHorizontalLayout.addWidget( self.myCancelButton )
+        self.myHorizontalLayout.addWidget( self.myAttachFileButton )
+        self.myHorizontalLayout.addWidget( self.mySendButton )
+#Add widgets to vertical layout
+        self.myVerticalLayout.addWidget( self.mySourceAccountLabel )
+        self.myVerticalLayout.addWidget( self.mySourceAccountBox )
+        self.myVerticalLayout.addWidget( self.myCarboncopyLabel )
+        self.myVerticalLayout.addWidget( self.myCarboncopyLine )
+        self.myVerticalLayout.addWidget( self.mySubjectLabel )
+        self.myVerticalLayout.addWidget( self.mySubjectLine )
+        self.myVerticalLayout.addWidget( self.myTextInputField )
+        self.myVerticalLayout.addWidget( self.myAttachmentLabel )
+#Stack Layouts
+        self.myVerticalLayout.addLayout( self.myHorizontalLayout )
+#Add stack to Window
+        self.setLayout( self.myVerticalLayout )
+#Show all
+        self.show()
+
+    def cancelButtonClicked( self ):
+        myMessageBox = QMessageBox( self )
+        myMessageBox.setWindowTitle("Cancel")
+        myMessageBox.setText("This will discard the actual message and close this window.\nAre you sure to proceed?")
+        myMessageBox.setIcon( QMessageBox.Question )
+        myMessageBox.setStandardButtons( QMessageBox.Ok | QMessageBox.Cancel )
+        tmpResponse = myMessageBox.exec()
+        if tmpResponse == QMessageBox.Ok:
+            QApplication.quit()
+
+    def sendButtonClicked( self ):
+        self.mailMessage.setSubject( self.mySubjectLine.text() )
+        self.mailMessage.setMessage( self.myTextInputField.toPlainText() )
+        self.mailMessage.sendMailWithAccount( self.myConfiguration['SMTPaccounts'][ self.mySourceAccountBox.currentIndex() ] )
+        self.close()
+
+
+if __name__=="__main__":
+    myApplication = QApplication( sys.argv )
+    myWindow = MessageWindow( sys.argv )
+    sys.exit( myApplication.exec_() )
+
+# QTextbox with mime capabilities
+# https://www.pythonguis.com/examples/python-rich-text-editor/

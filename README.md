@@ -7,7 +7,7 @@ To install this utility, you just need to have pyqt5 installed and copy the exec
 
 # Configuration
 
-Each user may should create a configuration file containing the following data
+Each user should create a configuration file containing the following data
 
 ```
 {
@@ -31,7 +31,7 @@ Each user may should create a configuration file containing the following data
   ]
 }
 ```
-The configuration file is hardcoded and has to be set to `~/.config/mailto.json`
+The configuration file location is hardcoded and has to be set to `~/.config/mailto.json`
 
 
 _(c)_ D.Sanchez 2022

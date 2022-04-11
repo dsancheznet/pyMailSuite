@@ -2,44 +2,18 @@
 # -*- coding: utf-8 -*-
 
 import sys, json, smtplib, email
-from PyQt5.QtWidgets import QComboBox, QApplication, QMessageBox, QWidget, QLabel, QTextEdit, QLineEdit, QPushButton, QVBoxLayout, QHBoxLayout
+from PyQt5.QtWidgets import QComboBox,QApplication,QMessageBox,QFileDialog,QWidget,QLabel,QTextEdit,QLineEdit,QPushButton,QVBoxLayout,QHBoxLayout
 from PyQt5 import QtCore
-
+from pathlib import Path
 
 #https://doc.qt.io/qtforpython-5/PySide2/QtWidgets/QWidget.html#PySide2.QtWidgets.PySide2.QtWidgets.QWidget.maximumWidth
-
-
-class MailMessage:
-    def __init__( self ):
-        self.myMailMessage = MIMEMultipart()
-
-    def setRecipient( self, tmpRecipient ):
-        self.myMailMessage['To'] = tmpRecipient
-
-    def setSender( self, tmpSender ):
-        self.myMailMessage['From'] = tmpSender
-
-    def setCC( self, tmpCarbonCopy ):
-        self.myMailMessage['cc'] = tmpCarbonCopy
-
-    def setSubject( self, tmpSubject ):
-        self.myMailMessage['Subject'] = tmpSubject
-
-    def setMessage( self, tmpMessage ):
-        self.myMailMessage.set_content( tmpMessage )
-
-    def addAttachment( self, tmpAttachment ):
-        self.myMailMessage.add_header( 'Content-Disposition', 'attachment',filename=( 'iso-8859-1', '', tmpAttachment ) )
-
-    def sendMailWithAccount( self, tmpAccountData ):
-        print("Sending...\n"+self.myMailMessage.as_string())
 
 
 class MessageWindow( QWidget ):
     def __init__( self, tmpRecipients ): #Class constructor
         super().__init__()
 #Read configuration file
-        with open('mailto.json', 'r') as tmpConfigFile:
+        with open( str( Path('~').expanduser() ) + '/.config/mailto/config.json', 'r') as tmpConfigFile:
             tmpConfigStore = json.load(tmpConfigFile)
 #Store config within class
         self.myConfiguration = tmpConfigStore
@@ -50,15 +24,15 @@ class MessageWindow( QWidget ):
 #Delete first argument (the script name)
         del tmpRecipients[0]
 #Initialize new mail Message
-        self.mailMessage = MailMessage()
         for tmpTo in tmpRecipients:
             tmpRecipientsString += tmpTo+","
-            self.mailMessage.setRecipient( tmpTo )
         tmpRecipientsString = tmpRecipientsString.strip(",")
         self.setWindowTitle( 'mailto: '+tmpRecipientsString )
 
     def initUI( self ): #UI Creation
-        self.setGeometry( 0, 0, 600, 600 )
+        self.setGeometry( 30, 30, 600, 600 )
+#Set default font
+        #self.myEditorFont = QFont()
 #Create Layouts
         self.myHorizontalLayout = QHBoxLayout()
         self.myVerticalLayout = QVBoxLayout()
@@ -76,6 +50,10 @@ class MessageWindow( QWidget ):
         self.mySubjectLine = QLineEdit()
 #Create Message Field
         self.myTextInputField = QTextEdit()
+        tmpFont = self.myTextInputField.font()
+        tmpFont.setFamily("Arial")
+        tmpFont.setPointSize(10)
+        self.myTextInputField.setFont(tmpFont)
 #Create Buttons and add them to they corresponding layout
         self.mySendButton = QPushButton("Send")
         self.mySendButton.clicked.connect( self.sendButtonClicked )
@@ -84,6 +62,7 @@ class MessageWindow( QWidget ):
         self.myCancelButton.clicked.connect( self.cancelButtonClicked )
         self.myCancelButton.setStyleSheet("background-color: #e30022; color: white; ")
         self.myAttachFileButton = QPushButton("Attach")
+        self.myAttachFileButton.clicked.connect( self.attachmentButtonClicked )
         self.myHorizontalLayout.addWidget( self.myCancelButton )
         self.myHorizontalLayout.addWidget( self.myAttachFileButton )
         self.myHorizontalLayout.addWidget( self.mySendButton )
@@ -113,10 +92,13 @@ class MessageWindow( QWidget ):
         if tmpResponse == QMessageBox.Ok:
             QApplication.quit()
 
+    def attachmentButtonClicked( self ):
+        print("Button clicked")
+        myFileSelector = QFileDialog()
+        myFileSelector.setFileMode( QFileDialog.AnyFile )
+        myFileSelector.exec_()
+
     def sendButtonClicked( self ):
-        self.mailMessage.setSubject( self.mySubjectLine.text() )
-        self.mailMessage.setMessage( self.myTextInputField.toPlainText() )
-        self.mailMessage.sendMailWithAccount( self.myConfiguration['SMTPaccounts'][ self.mySourceAccountBox.currentIndex() ] )
         self.close()
 
 

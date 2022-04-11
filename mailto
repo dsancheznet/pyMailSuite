@@ -1,12 +1,52 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import sys, json, smtplib, ssl
+import sys, json, smtplib, ssl, base64
 from PyQt5.QtWidgets import QComboBox,QApplication,QMessageBox,QFileDialog,QWidget,QLabel,QTextEdit,QLineEdit,QPushButton,QVBoxLayout,QHBoxLayout
 from PyQt5 import QtCore
 from pathlib import Path
 from email.message import EmailMessage
-#https://doc.qt.io/qtforpython-5/PySide2/QtWidgets/QWidget.html#PySide2.QtWidgets.PySide2.QtWidgets.QWidget.maximumWidth
+
+
+class EmailContainer:
+    def __init__( self ):
+        self.myMessage = EmailMessage()
+
+    def addFrom( self, tmpFrom ):
+        self.myMessage['From']=tmpFrom
+
+    def addTo( self, tmpTo ):
+        self.myMessage['To']=tmpTo
+
+    def addSubject( self, tmpSubject ):
+        self.myMessage['Subject']=tmpSubject
+
+    def addMessage( self, tmpMessage ):
+        self.myMessage.set_content( tmpMessage )
+
+    def addAttachment( self ):
+        pass
+
+    def sendMessage( self, tmpServerData ):
+        print("Sending via "+tmpServerData['NAME']+"...")
+        try:
+            if tmpServerData['PORT']==587:
+                tmpServer = smtplib.SMTP( tmpServerData['SERVER'], tmpServerData['PORT'] )
+                tmpServer.ehlo()
+                tmpServer.starttls( context=ssl.create_default_context() )
+            elif tmpServerData['PORT']==465:
+                tmpServer = smtplib.SMTP_SSL( tmpServerData['SERVER'], tmpServerData['PORT'] )
+                tmpServer.ehlo()
+            else:
+                print("Error: No valid port found.")
+                return False
+            tmpServer.login( tmpServerData['USERNAME'], base64.b64decode( tmpServerData['PASSWD'] ).decode('utf-8') )
+            tmpServer.send_message( self.myMessage )
+            tmpServer.close()
+        except Exception as e:
+            print("Error: "+str(e))
+        finally:
+            print("Mail successfully sent to "+self.myMessage['To'])
 
 
 class MessageWindow( QWidget ):
@@ -28,6 +68,7 @@ class MessageWindow( QWidget ):
             tmpRecipientsString += tmpTo+","
         tmpRecipientsString = tmpRecipientsString.strip(",")
         self.setWindowTitle( 'mailto: '+tmpRecipientsString )
+        self.myRecipients = tmpRecipientsString
 
     def initUI( self ): #UI Creation
         self.setGeometry( 30, 30, 600, 600 )
@@ -83,23 +124,29 @@ class MessageWindow( QWidget ):
         self.show()
 
     def cancelButtonClicked( self ):
-        myMessageBox = QMessageBox( self )
-        myMessageBox.setWindowTitle("Cancel")
-        myMessageBox.setText("This will discard the actual message and close this window.\nAre you sure to proceed?")
-        myMessageBox.setIcon( QMessageBox.Question )
-        myMessageBox.setStandardButtons( QMessageBox.Ok | QMessageBox.Cancel )
-        tmpResponse = myMessageBox.exec()
+        tmpMessageBox = QMessageBox( self )
+        tmpMessageBox.setWindowTitle("Cancel")
+        tmpMessageBox.setText("This will discard the actual message and close this window.\nAre you sure to proceed?")
+        tmpMessageBox.setIcon( QMessageBox.Question )
+        tmpMessageBox.setStandardButtons( QMessageBox.Ok | QMessageBox.Cancel )
+        tmpResponse = tmpMessageBox.exec()
         if tmpResponse == QMessageBox.Ok:
             QApplication.quit()
 
     def attachmentButtonClicked( self ):
-        print("Button clicked")
-        myFileSelector = QFileDialog()
-        myFileSelector.setFileMode( QFileDialog.AnyFile )
-        myFileSelector.exec_()
+        print("Attachment button clicked, but there is no functionality yet!")
+        tmpFileSelector = QFileDialog()
+        tmpFileSelector.setFileMode( QFileDialog.AnyFile )
+        tmpFileSelector.exec_()
 
     def sendButtonClicked( self ):
-        print( self.myTextInputField.toHtml() )
+        tmpCurrentAccount=self.myConfiguration["SMTPaccounts"][self.mySourceAccountBox.currentIndex()]
+        tmpMailMessage = EmailContainer()
+        tmpMailMessage.addFrom( tmpCurrentAccount['SENDER'] )
+        tmpMailMessage.addTo( self.myRecipients )
+        tmpMailMessage.addSubject( self.mySubjectLine.text() )
+        tmpMailMessage.addMessage( self.myTextInputField.toPlainText() )
+        tmpMailMessage.sendMessage( tmpCurrentAccount )
         self.close()
 
 

@@ -9,7 +9,7 @@ To install this utility, you just need to have pyqt5 installed and copy the exec
 
 Each user should create a configuration file containing the following data
 
-```
+```json
 {
 "SMTPaccounts":[     
       {
@@ -31,7 +31,17 @@ Each user should create a configuration file containing the following data
   ]
 }
 ```
-The configuration file location is hardcoded and has to be set to `~/.config/config.json`
+
+To generate a base64 encrypted password just go into a python3 editor and type the following:
+
+```python
+import base64
+print(base64.b64encode("Your Password Here!".encode('utf-8')).decode('utf-8'))
+```
+
+The configuration file location is hardcoded to be set to `~/.config/mailto/config.json`. If the directory does not exist, create it!
+
+
 
 
 

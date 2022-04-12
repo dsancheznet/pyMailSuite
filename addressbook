@@ -1,0 +1,65 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import sys, sqlite3, getopt
+from pathlib import Path
+
+
+# -s Search
+# -n New
+# -d Delete
+# -l list
+
+class AddressBook:
+    def __init__( self ):
+        try:
+            self.dbconnection = sqlite3.connect(str( Path('~').expanduser() ) + '/.config/mailto/addressbook.db')
+        except Exception as e:
+            print("Error: "+str(e))
+
+    def search( self, tmpSearchTerm ):
+        tmpCursor = self.dbconnection.cursor()
+        for tmpRow in tmpCursor.execute('SELECT * FROM email WHERE ( name || email ) like "%'+tmpSearchTerm+'%" ORDER BY name ASC' ):
+            #print("Term: "+tmpSearchTerm)
+            print( "'\""+tmpRow[0]+"\" <"+tmpRow[1]+">' " )
+
+    def list( self ):
+        self.search( "@" )
+
+    def new( self, tmpNewAddress ):
+        tmpCursor = self.dbconnection.cursor()
+        tmpFullName = input("Please anter the full name for "+tmpNewAddress+": ")
+        tmpCursor.execute('INSERT INTO email(name,email) VALUES("'+tmpFullName+'","'+tmpNewAddress+'")')
+        self.dbconnection.commit()
+
+    def delete( self, tmpDeleteEmail ):
+        tmpCursor = self.dbconnection.cursor()
+        tmpCursor.execute('DELETE FROM email WHERE email="'+tmpDeleteEmail+'"')
+        self.dbconnection.commit()
+
+    def __del__( self ):
+        self.dbconnection.close()
+
+if __name__=="__main__":
+    try:
+        opts, args = getopt.getopt( sys.argv[1:], "s:n:d:l", [ "search=", "new=", "delete=", "--list" ] )
+
+    except Exception as e:
+        print("Error: "+str(e))
+
+    else:
+        myAddressBook = AddressBook()
+        for opt, arg in opts:
+            if opt in ( "-s", "--search" ):
+                myAddressBook.search( arg )
+            elif opt in ( "-n", "--new" ):
+                myAddressBook.new( arg )
+            elif opt in ( "-d", "--delete" ):
+                myAddressBook.delete( arg )
+            elif opt in ( "-l", "--list" ):
+                myAddressBook.list()
+            else:
+                print("addressbook Version "+VERSION+" written by D.Sánchez (c)2022")
+                print("Usage:")
+                print(" addressbook [-s term | -n email | -d email]")
+    del myAddressBook

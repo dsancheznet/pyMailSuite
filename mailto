@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys, json, smtplib, ssl, base64
-from PyQt5.QtWidgets import QComboBox,QApplication,QMessageBox,QFileDialog,QWidget,QLabel,QTextEdit,QLineEdit,QPushButton,QVBoxLayout,QHBoxLayout
+from PyQt5.QtWidgets import QComboBox,QApplication,QDesktopWidget,QMessageBox,QFileDialog,QWidget,QLabel,QTextEdit,QLineEdit,QPushButton,QVBoxLayout,QHBoxLayout
 from PyQt5 import QtCore
 from pathlib import Path
 from email.message import EmailMessage
@@ -31,8 +31,8 @@ class EmailContainer:
     def addMessage( self, tmpMessage ):
         self.myMessage.set_content( tmpMessage )
 
-    def addAttachment( self ):
-        pass
+    def addAttachment( self, tmpFileName ):
+        self.myMessage.add_attachment( open( tmpFileName, "r").read(), filename=tmpFileName )
 
     def sendMessage( self, tmpServerData ):
         print("Sending via "+tmpServerData['NAME']+"...")
@@ -81,7 +81,11 @@ class MessageWindow( QWidget ):
         self.myRecipients = tmpRecipientsString
 
     def initUI( self ): #UI Creation
-        self.setGeometry( 30, 30, 600, 600 )
+        self.setGeometry( 0, 0, 600, 600 )
+        tmpCenter = QDesktopWidget().availableGeometry().center()
+        tmpFrame = self.frameGeometry()
+        tmpFrame.moveCenter( tmpCenter )
+        self.move(tmpFrame.topLeft())
 #Set default font
         #self.myEditorFont = QFont()
 #Create Layouts
@@ -141,6 +145,7 @@ class MessageWindow( QWidget ):
         tmpMessageBox.setStandardButtons( QMessageBox.Yes | QMessageBox.Cancel )
         tmpResponse = tmpMessageBox.exec()
         if tmpResponse == QMessageBox.Yes:
+            print("Discarding message.")
             QApplication.quit()
 
     def attachmentButtonClicked( self ):

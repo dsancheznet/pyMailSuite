@@ -7,8 +7,12 @@ from PyQt5 import QtCore
 from pathlib import Path
 from email.message import EmailMessage
 
+VERSION="1.0"
 
 class EmailContainer:
+    """
+        Class to manage, contain and send a mail message through a SMTP server.
+    """
     def __init__( self ):
         self.myMessage = EmailMessage()
 
@@ -17,6 +21,9 @@ class EmailContainer:
 
     def addTo( self, tmpTo ):
         self.myMessage['To']=tmpTo
+
+    def addCC( self, tmpCC ):
+        self.myMessage['CC']=tmpCC
 
     def addSubject( self, tmpSubject ):
         self.myMessage['Subject']=tmpSubject
@@ -45,11 +52,14 @@ class EmailContainer:
             tmpServer.close()
         except Exception as e:
             print("Error: "+str(e))
-        finally:
+        else:
             print("Mail successfully sent to "+self.myMessage['To'])
 
 
 class MessageWindow( QWidget ):
+    """
+    GUI Part of the email message window.
+    """
     def __init__( self, tmpRecipients ): #Class constructor
         super().__init__()
 #Read configuration file
@@ -93,7 +103,7 @@ class MessageWindow( QWidget ):
         self.myTextInputField = QTextEdit()
         tmpFont = self.myTextInputField.font()
         tmpFont.setFamily("Arial")
-        tmpFont.setPointSize(10)
+        tmpFont.setPointSize(11)
         self.myTextInputField.setFont(tmpFont)
 #Create Buttons and add them to they corresponding layout
         self.mySendButton = QPushButton("Send")
@@ -128,9 +138,9 @@ class MessageWindow( QWidget ):
         tmpMessageBox.setWindowTitle("Cancel")
         tmpMessageBox.setText("This will discard the actual message and close this window.\nAre you sure to proceed?")
         tmpMessageBox.setIcon( QMessageBox.Question )
-        tmpMessageBox.setStandardButtons( QMessageBox.Ok | QMessageBox.Cancel )
+        tmpMessageBox.setStandardButtons( QMessageBox.Yes | QMessageBox.Cancel )
         tmpResponse = tmpMessageBox.exec()
-        if tmpResponse == QMessageBox.Ok:
+        if tmpResponse == QMessageBox.Yes:
             QApplication.quit()
 
     def attachmentButtonClicked( self ):
@@ -144,6 +154,8 @@ class MessageWindow( QWidget ):
         tmpMailMessage = EmailContainer()
         tmpMailMessage.addFrom( tmpCurrentAccount['SENDER'] )
         tmpMailMessage.addTo( self.myRecipients )
+        if self.myCarboncopyLine.text()!="":
+            tmpMailMessage.addCC( self.myCarboncopyLine.text() )
         tmpMailMessage.addSubject( self.mySubjectLine.text() )
         tmpMailMessage.addMessage( self.myTextInputField.toPlainText() )
         tmpMailMessage.sendMessage( tmpCurrentAccount )
@@ -151,6 +163,7 @@ class MessageWindow( QWidget ):
 
 
 if __name__=="__main__":
+    print("Launching MailTo Version "+VERSION+", written by D.Sánchez (c)2022")
     myApplication = QApplication( sys.argv )
     myWindow = MessageWindow( sys.argv )
     sys.exit( myApplication.exec_() )

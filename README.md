@@ -16,7 +16,7 @@ Each user should create a configuration file containing the following data
         "NAME":"Set this to the label you want to show up",
         "SENDER": "your complete email address",
         "USERNAME": "the username to send email from (this server)",
-        "PASSWD": "your plaintext password",
+        "PASSWD": "your base64 encoded password",
         "SERVER": "your smtp server",
         "PORT": your server port (no quotation marks)
       },
@@ -24,14 +24,15 @@ Each user should create a configuration file containing the following data
         "NAME":"Set this to the label you want to show up",
         "SENDER": "your complete email address",
         "USERNAME": "the username to send email from (this server)",
-        "PASSWD": "your plaintext password",
+        "PASSWD": "your base64 encoded password",
         "SERVER": "your smtp server",
         "PORT": your server port (no quotation marks)
       }
   ]
 }
 ```
-The configuration file location is hardcoded and has to be set to `~/.config/mailto.json`
+The configuration file location is hardcoded and has to be set to `~/.config/config.json`
 
 
-_(c)_ D.Sanchez 2022
+
+(c) D.Sanchez 2022
